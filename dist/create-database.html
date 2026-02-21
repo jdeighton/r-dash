@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Sample Database - vDash</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f8fafc;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #1e293b;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #64748b;
+      margin-bottom: 30px;
+    }
+    .instructions {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+    }
+    .instructions h3 {
+      margin: 0 0 10px 0;
+      color: #1e293b;
+      font-size: 16px;
+    }
+    .instructions ol {
+      margin: 10px 0 0 20px;
+      padding: 0;
+    }
+    .instructions li {
+      margin: 5px 0;
+      color: #475569;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-right: 10px;
+    }
+    button:hover {
+      background: #2563eb;
+      transform: translateY(-1px);
+    }
+    button:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .log {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f1f5f9;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      max-height: 400px;
+      overflow-y: auto;
+      display: none;
+    }
+    .log-entry {
+      margin: 5px 0;
+      color: #475569;
+    }
+    .log-entry.success {
+      color: #10b981;
+    }
+    .log-entry.error {
+      color: #ef4444;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin: 20px 0;
+      display: none;
+    }
+    .stat {
+      padding: 15px;
+      background: #f8fafc;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #3b82f6;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: #64748b;
+      text-transform: uppercase;
+      margin-top: 5px;
+    }
+    code {
+      background: #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      color: #3b82f6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🦆 Create Sample Database</h1>
+    <p class="subtitle">Generate a DuckDB database file with sample business data</p>
+
+    <div class="instructions">
+      <h3>📋 Instructions</h3>
+      <ol>
+        <li>Click "Generate SQL" below to create sample data</li>
+        <li>Download the generated SQL file</li>
+        <li>Use DuckDB CLI to create database: <code>duckdb sample-data.duckdb < sample-data.sql</code></li>
+        <li>Or run: <code>bun run generate-sql</code> from the project root</li>
+      </ol>
+    </div>
+
+    <button id="createBtn" onclick="createDatabase()">Generate SQL</button>
+
+    <div class="stats" id="stats">
+      <div class="stat">
+        <div class="stat-value" id="productCount">0</div>
+        <div class="stat-label">Products</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="customerCount">0</div>
+        <div class="stat-label">Customers</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="salesCount">0</div>
+        <div class="stat-label">Sales</div>
+      </div>
+    </div>
+
+    <div class="log" id="log"></div>
+  </div>
+
+  <script>
+    window.createDatabase = async function() {
+      const btn = document.getElementById('createBtn');
+      const logEl = document.getElementById('log');
+      const statsEl = document.getElementById('stats');
+
+      btn.disabled = true;
+      logEl.style.display = 'block';
+      logEl.innerHTML = '';
+
+      function log(message, type = 'info') {
+        const entry = document.createElement('div');
+        entry.className = `log-entry ${type}`;
+        entry.textContent = message;
+        logEl.appendChild(entry);
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      try {
+        log('🚀 Starting database creation...');
+
+        // Check if running on localhost
+        if (window.location.protocol === 'file:') {
+          log('❌ Error: Must run through HTTP server', 'error');
+          log('Please run: bun run dev', 'error');
+          log('Then visit: http://localhost:5173/create-database.html', 'error');
+          btn.disabled = false;
+          return;
+        }
+
+        // Generate sample data
+        log('📦 Generating sample data...');
+        const data = generateSampleData();
+
+        document.getElementById('productCount').textContent = data.products.length;
+        document.getElementById('customerCount').textContent = data.customers.length;
+        document.getElementById('salesCount').textContent = data.sales.length;
+        statsEl.style.display = 'grid';
+
+        log(`✓ Generated ${data.products.length} products`, 'success');
+        log(`✓ Generated ${data.customers.length} customers`, 'success');
+        log(`✓ Generated ${data.sales.length} sales`, 'success');
+
+        // Generate SQL file
+        log('💾 Generating SQL file...');
+
+        try {
+
+          // Create SQL INSERT statements
+          log('  - Building SQL file...');
+          let sql = `-- Sample Database for vDash
+-- Generated: ${new Date().toISOString()}
+
+CREATE TABLE products (
+  id INTEGER PRIMARY KEY,
+  name VARCHAR,
+  category VARCHAR,
+  price DECIMAL(10, 2),
+  stock INTEGER
+);
+
+CREATE TABLE customers (
+  id INTEGER PRIMARY KEY,
+  name VARCHAR,
+  email VARCHAR,
+  city VARCHAR,
+  total_orders INTEGER
+);
+
+CREATE TABLE sales (
+  id INTEGER PRIMARY KEY,
+  date DATE,
+  product_id INTEGER,
+  customer_id INTEGER,
+  quantity INTEGER,
+  amount DECIMAL(10, 2)
+);
+
+-- Insert Products
+`;
+
+          for (const product of data.products) {
+            sql += `INSERT INTO products VALUES (${product.id}, '${product.name.replace(/'/g, "''")}', '${product.category}', ${product.price}, ${product.stock});\n`;
+          }
+
+          sql += '\n-- Insert Customers\n';
+          for (const customer of data.customers) {
+            sql += `INSERT INTO customers VALUES (${customer.id}, '${customer.name.replace(/'/g, "''")}', '${customer.email}', '${customer.city}', ${customer.total_orders});\n`;
+          }
+
+          sql += '\n-- Insert Sales\n';
+          for (const sale of data.sales) {
+            sql += `INSERT INTO sales VALUES (${sale.id}, '${sale.date}', ${sale.product_id}, ${sale.customer_id}, ${sale.quantity}, ${sale.amount});\n`;
+          }
+
+          log('  - ✓ SQL file generated');
+
+          // Download SQL file
+          log('  - Creating download...');
+          const blob = new Blob([sql], { type: 'text/plain' });
+          const url = URL.createObjectURL(blob);
+
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'sample-data.sql';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          log('  - ✓ SQL file downloaded');
+        } catch (e) {
+          log(`  - Error generating SQL: ${e.message}`, 'error');
+          throw e;
+        }
+
+        log('✅ SQL file generated and downloaded!', 'success');
+        log('📁 File saved as: sample-data.sql', 'success');
+        log('💡 To create database: duckdb sample-data.duckdb < sample-data.sql', 'success');
+        log('🎉 Then drag sample-data.duckdb into vDash!', 'success');
+
+      } catch (error) {
+        const errorMsg = error.message || error.toString() || 'Unknown error occurred';
+        log(`❌ Error: ${errorMsg}`, 'error');
+
+        // Log all error properties
+        console.error('Full error details:', error);
+        console.error('Error type:', error.constructor.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+
+        // Try to get more details from DuckDB errors
+        if (error.name) log(`Error name: ${error.name}`, 'error');
+        if (error.code) log(`Error code: ${error.code}`, 'error');
+
+        // Check browser console for full error details
+        log('⚠️ Check browser console (F12) for full error details', 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
+    // Sample data generation functions (same as before)
+    function generateSampleData() {
+      const CATEGORIES = [
+        'Electronics', 'Clothing', 'Home & Garden', 'Sports & Outdoors',
+        'Books', 'Toys & Games', 'Food & Beverage', 'Health & Beauty'
+      ];
+
+      const PRODUCT_NAMES = {
+        'Electronics': ['Wireless Headphones', 'Smart Watch', 'USB-C Cable', 'Bluetooth Speaker', 'Laptop Stand', 'Wireless Mouse', 'Keyboard', 'Phone Case', 'Screen Protector', 'Power Bank'],
+        'Clothing': ['T-Shirt', 'Jeans', 'Hoodie', 'Sneakers', 'Jacket', 'Dress Shirt', 'Shorts', 'Socks', 'Hat', 'Scarf'],
+        'Home & Garden': ['Coffee Maker', 'Throw Pillow', 'Wall Clock', 'Plant Pot', 'Candle Set', 'Picture Frame', 'Bath Towel', 'Kitchen Knife', 'Cutting Board', 'Storage Box'],
+        'Sports & Outdoors': ['Yoga Mat', 'Water Bottle', 'Dumbbell Set', 'Camping Tent', 'Hiking Backpack', 'Running Shoes', 'Bicycle Helmet', 'Sports Watch', 'Jump Rope', 'Resistance Bands'],
+        'Books': ['Fiction Novel', 'Cookbook', 'Self-Help Book', 'Biography', 'Science Fiction', 'Mystery Thriller', 'Poetry Collection', 'Travel Guide', 'History Book', 'Business Book'],
+        'Toys & Games': ['Board Game', 'Puzzle', 'Action Figure', 'Building Blocks', 'Stuffed Animal', 'Playing Cards', 'RC Car', 'Art Supplies', 'Educational Toy', 'Outdoor Game'],
+        'Food & Beverage': ['Coffee Beans', 'Green Tea', 'Chocolate Bar', 'Protein Powder', 'Olive Oil', 'Honey', 'Snack Mix', 'Energy Drink', 'Pasta', 'Hot Sauce'],
+        'Health & Beauty': ['Face Cream', 'Shampoo', 'Body Lotion', 'Lip Balm', 'Hand Sanitizer', 'Vitamins', 'Face Mask', 'Deodorant', 'Toothpaste', 'Soap']
+      };
+
+      const CITIES = ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia', 'San Antonio', 'San Diego', 'Dallas', 'San Jose', 'Austin', 'Jacksonville', 'Fort Worth', 'Columbus', 'Indianapolis'];
+
+      const FIRST_NAMES = ['James', 'Mary', 'John', 'Patricia', 'Robert', 'Jennifer', 'Michael', 'Linda', 'William', 'Barbara', 'David', 'Elizabeth', 'Richard', 'Susan', 'Joseph', 'Jessica', 'Thomas', 'Sarah', 'Charles', 'Karen'];
+      const LAST_NAMES = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore'];
+
+      function rand(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
+      function randFloat(min, max) {
+        return Number((Math.random() * (max - min) + min).toFixed(2));
+      }
+
+      function choice(arr) {
+        return arr[rand(0, arr.length - 1)];
+      }
+
+      function randDate(start, end) {
+        const date = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+        return date.toISOString().split('T')[0];
+      }
+
+      // Generate products
+      const products = [];
+      let productId = 1;
+      for (const category of CATEGORIES) {
+        const names = PRODUCT_NAMES[category];
+        for (let i = 0; i < 10 && productId <= 80; i++) {
+          products.push({
+            id: productId++,
+            name: names[i % names.length],
+            category,
+            price: randFloat(5, 200),
+            stock: rand(0, 500)
+          });
+        }
+      }
+
+      // Generate customers
+      const customers = [];
+      for (let i = 1; i <= 150; i++) {
+        const firstName = choice(FIRST_NAMES);
+        const lastName = choice(LAST_NAMES);
+        customers.push({
+          id: i,
+          name: `${firstName} ${lastName}`,
+          email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${i}@email.com`,
+          city: choice(CITIES),
+          total_orders: rand(1, 50)
+        });
+      }
+
+      // Generate sales
+      const sales = [];
+      const startDate = new Date('2024-01-01');
+      const endDate = new Date('2024-12-31');
+
+      for (let i = 1; i <= 800; i++) {
+        const product = choice(products);
+        const customer = choice(customers);
+        const quantity = rand(1, 10);
+        sales.push({
+          id: i,
+          date: randDate(startDate, endDate),
+          product_id: product.id,
+          customer_id: customer.id,
+          quantity,
+          amount: randFloat(product.price * quantity * 0.9, product.price * quantity * 1.1)
+        });
+      }
+
+      sales.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      return { products, customers, sales };
+    }
+  </script>
+</body>
+</html>

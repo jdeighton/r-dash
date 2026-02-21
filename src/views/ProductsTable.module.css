@@ -1,0 +1,62 @@
+.filterBtn {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filterBtnHigh {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #86efac;
+}
+
+.filterBtnHigh:hover {
+  background: #bbf7d0;
+  border-color: #4ade80;
+}
+
+.filterBtnLow {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
+.filterBtnLow:hover {
+  background: #fecaca;
+  border-color: #f87171;
+}
+
+.filterBtnReset {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+.filterBtnReset:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+}
+
+.filterBtnCategory {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.filterBtnCategory:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.filterSeparator {
+  display: inline-block;
+  width: 1px;
+  height: 1.5rem;
+  background: #cbd5e1;
+  margin: 0 0.25rem;
+  align-self: center;
+}
