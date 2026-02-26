@@ -2,7 +2,7 @@
 -- Generated: 2026-02-12T03:41:23.256Z
 
 -- Create Products Table
-CREATE TABLE products (
+CREATE or REPLACE TABLE products (
   id INTEGER PRIMARY KEY,
   name VARCHAR,
   category VARCHAR,
@@ -11,7 +11,7 @@ CREATE TABLE products (
 );
 
 -- Create Customers Table
-CREATE TABLE customers (
+CREATE or REPLACE TABLE customers (
   id INTEGER PRIMARY KEY,
   name VARCHAR,
   email VARCHAR,
@@ -20,7 +20,7 @@ CREATE TABLE customers (
 );
 
 -- Create Sales Table
-CREATE TABLE sales (
+CREATE or REPLACE TABLE sales (
   id INTEGER PRIMARY KEY,
   date DATE,
   product_id INTEGER,
@@ -33,7 +33,7 @@ CREATE TABLE sales (
 -- start_date and event_name are required; end_date, event_description, customer_id are optional.
 -- end_date present = a multi-day period; absent = a single-day event.
 -- customer_id references customers(id) but no FK is enforced.
-CREATE TABLE events (
+CREATE or REPLACE TABLE events (
   id INTEGER PRIMARY KEY,
   start_date DATE NOT NULL,
   end_date DATE,
@@ -1085,3 +1085,214 @@ INSERT INTO events VALUES (2, '2024-06-01', NULL,         'Summer Product Launch
 INSERT INTO events VALUES (3, '2024-11-29', NULL,         'Black Friday',           NULL, NULL);
 INSERT INTO events VALUES (4, '2024-03-18', '2024-04-01', 'Spring Clearance',       'Two-week clearance across Home & Garden and Clothing categories', 15);
 INSERT INTO events VALUES (5, '2024-07-08', '2024-07-21', 'Summer Campaign',        'Annual mid-year promotional push across all categories', NULL);
+
+-- Create Markdown Table
+-- Schema mirrors what `SELECT * FROM read_markdown('*.md')` would produce.
+-- id: synthetic row id; filename: source file name; title: first H1 heading
+-- or front-matter title; content: full markdown source.
+CREATE or REPLACE TABLE markdown (
+  id       INTEGER PRIMARY KEY,
+  filename VARCHAR NOT NULL,
+  title    VARCHAR NOT NULL,
+  content  VARCHAR NOT NULL
+);
+
+-- Insert sample markdown documents
+INSERT INTO markdown VALUES (1, 'getting-started.md', 'Getting Started', $$# Getting Started
+
+Welcome to **react-dash** — a single-page analytics dashboard powered by
+[DuckDB WASM](https://duckdb.org/docs/api/wasm/overview).
+
+## Requirements
+
+- A modern browser (Chrome, Edge, Firefox, or Safari)
+- A DuckDB database file (`.db` / `.duckdb`) or a Parquet file
+
+## Loading Your Data
+
+1. Open the app in your browser using the `file://` URL provided.
+2. Drag and drop your `.db`, `.duckdb`, or `.parquet` file onto the drop zone.
+3. Alternatively, click **Browse Files** to open a file picker.
+4. Once loaded, the status indicator in the sidebar turns **green**.
+
+> **Tip:** The app never uploads your data anywhere. All processing happens
+> locally inside the browser using WebAssembly.
+
+## First Steps
+
+After loading a database you can:
+
+- Browse raw data in the **Tables** section of the sidebar.
+- Explore pre-built visualisations under **Charts**.
+- Read documentation pages here in **Docs**.
+
+## Keyboard Shortcuts
+
+| Action          | Shortcut      |
+| --------------- | ------------- |
+| Toggle sidebar  | `Ctrl+B`      |
+| Go to dashboard | `Ctrl+Home`   |
+| Export table    | `Ctrl+E`      |
+
+## Troubleshooting
+
+If the app shows **No Database** after dropping a file, check that:
+
+- The file extension is `.db`, `.duckdb`, or `.parquet`.
+- The file is not open in another application (some OS lock files on read).
+- Your browser has not blocked local file access.
+$$);
+
+INSERT INTO markdown VALUES (2, 'data-sources.md', 'Data Sources', $$# Data Sources
+
+react-dash can read several file formats that DuckDB supports natively.
+
+## Supported Formats
+
+| Format    | Extension          | Notes                                      |
+| --------- | ------------------ | ------------------------------------------ |
+| DuckDB    | `.db` / `.duckdb`  | Native format; supports multiple tables    |
+| Parquet   | `.parquet`         | Columnar, high-performance analytics files |
+
+> Support for CSV and JSON files via in-browser conversion is planned for a
+> future release.
+
+## DuckDB Files
+
+A `.duckdb` file can contain any number of tables. Once loaded, every table
+is available in the sidebar and can be queried directly.
+
+```sql
+-- Example: generate a sample database with DuckDB CLI
+COPY (SELECT * FROM range(1000)) TO 'output.parquet';
+```
+
+## Parquet Files
+
+Parquet files are loaded as a single table called `data`. All columns are
+available immediately after the file is dropped onto the app.
+
+### Column Type Inference
+
+react-dash automatically detects column types and applies formatting:
+
+- **Currency columns** (`amount`, `total`, `price`, `revenue`, `cost`, `sales`)
+  are formatted with a `$` prefix and two decimal places.
+- **Numeric columns** receive thousand-separator formatting.
+- **Date columns** (`date`, `time` in the name) are formatted as locale dates.
+
+## Refreshing Data
+
+To load a different database, simply drag a new file onto the drop zone. The
+previous database is replaced in memory — the original file on disk is never
+modified.
+$$);
+
+INSERT INTO markdown VALUES (3, 'charts-guide.md', 'Charts Guide', $$# Charts Guide
+
+react-dash uses [AG Charts Community](https://www.ag-grid.com/charts/) to
+render interactive, exportable charts.
+
+## Available Chart Types
+
+| Chart                     | Path                          | Description                        |
+| ------------------------- | ----------------------------- | ---------------------------------- |
+| Revenue Trend             | `/charts/revenue`             | Daily revenue as a line chart      |
+| Sales by Category         | `/charts/sales-category`      | Bar chart grouped by product type  |
+| Top Products              | `/charts/top-products`        | Donut chart of top 10 by revenue   |
+| Monthly Sales by Product  | `/charts/monthly-sales-by-product` | Stacked bars per product      |
+
+## Exporting Charts
+
+Every chart page provides two export actions in the top-right corner:
+
+- **Copy Chart** — copies a PNG image of the chart to your clipboard.
+- **Download** — saves the chart as a `.png` file to your downloads folder.
+
+> **Note:** The *Copy Chart* button requires the
+> [Clipboard API](https://developer.mozilla.org/en-US/docs/Web/API/Clipboard_API),
+> which is not available on `file://` URLs in some browsers.
+> Use **Download** as a reliable alternative.
+
+## Drill-Down Charts
+
+Some charts are linked from other views rather than appearing in the sidebar.
+For example, clicking a customer ID in the **Customers** table opens a
+monthly sales breakdown for that specific customer.
+
+These parameterised pages follow the URL pattern:
+
+```
+#/charts/monthly-sales-by-customer/<customer_id>
+```
+
+## Adding Custom Charts
+
+1. Create a new file in `src/views/`, e.g. `MyChart.jsx`.
+2. Import `ChartView` and define your `chartOptions` with an `ag-charts-community` series config.
+3. Register the route in `src/router.jsx`.
+$$);
+
+INSERT INTO markdown VALUES (4, 'faq.md', 'FAQ', $$# Frequently Asked Questions
+
+## General
+
+### Does react-dash send my data to a server?
+
+**No.** Everything runs locally in your browser. DuckDB WASM processes all
+queries inside a Web Worker. No data ever leaves your machine.
+
+### Which browsers are supported?
+
+react-dash is tested on:
+
+- [x] Chrome / Chromium 120+
+- [x] Microsoft Edge 120+
+- [x] Firefox 121+
+- [x] Safari 17+
+- [ ] Internet Explorer *(not supported)*
+
+### Can I use react-dash without an internet connection?
+
+Once the app has been opened at least once (so the DuckDB WASM bundle is
+cached), it works fully offline. The initial load requires an internet
+connection to fetch the WASM bundle from the jsDelivr CDN.
+
+---
+
+## Data & Queries
+
+### Why does my column show `NaN` instead of a number?
+
+This can happen when a VARCHAR column contains non-numeric values that the
+formatter tries to parse. Check your source data for empty strings or text
+mixed into a numeric column.
+
+### Can I run arbitrary SQL?
+
+~~A built-in SQL console is not yet available.~~ A SQL query panel is on the
+roadmap. For now, all queries are defined in the source code of each view
+component.
+
+### How do I add a new table view?
+
+1. Write your SQL query selecting only the columns you want to display.
+2. Create a new file in `src/views/` that passes the query to `<TableView>`.
+3. Add a route entry in `src/router.jsx` with `category: 'Tables'`.
+
+---
+
+## Performance
+
+### How large a database can I load?
+
+In practice, files up to **~500 MB** work well. DuckDB WASM can handle
+larger files, but browser memory limits apply. For very large datasets,
+consider pre-aggregating data into a smaller summary file.
+
+### Queries feel slow. What can I do?
+
+- Add DuckDB indexes to frequently filtered columns.
+- Pre-aggregate data at load time using a view or materialised query.
+- Reduce row count with a `LIMIT` or `WHERE` clause in the view query.
+$$);

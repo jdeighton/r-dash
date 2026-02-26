@@ -12,12 +12,25 @@ const CUSTOMERS_QUERY = `
   ORDER BY total_orders DESC
 `
 
+function CustomerIdCellRenderer({ value }) {
+  return (
+    <a href={`#/charts/monthly-sales-by-customer/${value}`}>
+      {value}
+    </a>
+  )
+}
+
+const COLUMN_OVERRIDES = {
+  id: { cellRenderer: CustomerIdCellRenderer },
+}
+
 export default function CustomersTable() {
   return (
     <TableView
       title="Customers"
       query={CUSTOMERS_QUERY}
       tableName="customers"
+      columnOverrides={COLUMN_OVERRIDES}
     />
   )
 }

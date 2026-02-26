@@ -31,6 +31,11 @@ export default function Sidebar() {
     []
   )
 
+  const docsRoutes = useMemo(
+    () => routeConfig.filter(r => r.category === 'Docs'),
+    []
+  )
+
   const sidebarClass = `${styles.sidebar} ${isCollapsed ? styles.collapsed : ''}`
 
   return (
@@ -90,6 +95,20 @@ export default function Sidebar() {
               className={`${styles.navLink} ${location.pathname === route.path ? styles.active : ''}`}
             >
               <span className={styles.navIcon}>{'\uD83D\uDCC8'}</span>
+              <span className={styles.navText}>{route.title}</span>
+            </Link>
+          ))}
+        </div>
+
+        <div className={styles.navSection}>
+          <h3 className={styles.sectionTitle}>Docs</h3>
+          {docsRoutes.map(route => (
+            <Link
+              key={route.path}
+              to={route.path}
+              className={`${styles.navLink} ${location.pathname === route.path ? styles.active : ''}`}
+            >
+              <span className={styles.navIcon}>{'\uD83D\uDCDA'}</span>
               <span className={styles.navText}>{route.title}</span>
             </Link>
           ))}

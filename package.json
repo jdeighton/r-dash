@@ -11,13 +11,15 @@
     "create-db": "start public/create-database.html"
   },
   "dependencies": {
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0",
-    "react-router-dom": "^6.28.0",
     "@duckdb/duckdb-wasm": "^1.33.1-dev18.0",
     "ag-charts-community": "^13.1.0",
     "ag-grid-community": "^35.1.0",
-    "ag-grid-react": "^35.1.0"
+    "ag-grid-react": "^35.1.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "react-markdown": "^10.1.0",
+    "react-router-dom": "^6.28.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.4.0",

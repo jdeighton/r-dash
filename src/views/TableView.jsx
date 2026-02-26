@@ -11,7 +11,7 @@ import styles from './TableView.module.css'
 // Register AG Grid modules once
 ModuleRegistry.registerModules([AllCommunityModule])
 
-export default function TableView({ title, query, tableName, filterBar: FilterBar }) {
+export default function TableView({ title, query, tableName, filterBar: FilterBar, columnOverrides }) {
   const { queryToArray } = useDuckDB()
   const gridApiRef = useRef(null)
 
@@ -45,7 +45,14 @@ export default function TableView({ title, query, tableName, filterBar: FilterBa
       setRowData(plainData)
 
       if (plainData.length > 0) {
-        setColumnDefs(generateColumnDefs(plainData))
+        let cols = generateColumnDefs(plainData)
+        if (columnOverrides) {
+          cols = cols.map(col => {
+            const override = columnOverrides[col.field]
+            return override ? { ...col, ...override } : col
+          })
+        }
+        setColumnDefs(cols)
       }
 
       setLoading(false)
@@ -54,7 +61,7 @@ export default function TableView({ title, query, tableName, filterBar: FilterBa
       setLoading(false)
       console.error('Failed to load table data:', err)
     }
-  }, [query, queryToArray])
+  }, [query, queryToArray, columnOverrides])
 
   useEffect(() => {
     loadData()

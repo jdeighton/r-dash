@@ -9,6 +9,9 @@ const RevenueChart = lazy(() => import('./views/RevenueChart'))
 const SalesByCategoryChart = lazy(() => import('./views/SalesByCategoryChart'))
 const TopProductsChart = lazy(() => import('./views/TopProductsChart'))
 const MonthlySalesByProductChart = lazy(() => import('./views/MonthlySalesByProductChart'))
+const MonthlySalesByCustomerChart = lazy(() => import('./views/MonthlySalesByCustomerChart'))
+const DocsTable = lazy(() => import('./views/DocsTable'))
+const DocPage = lazy(() => import('./views/DocPage'))
 
 export const routeConfig = [
   { path: '/', name: 'Dashboard', title: 'Dashboard' },
@@ -19,6 +22,7 @@ export const routeConfig = [
   { path: '/charts/sales-category', name: 'SalesByCategoryChart', title: 'Sales by Category', category: 'Charts' },
   { path: '/charts/top-products', name: 'TopProductsChart', title: 'Top Products', category: 'Charts' },
   { path: '/charts/monthly-sales-by-product', name: 'MonthlySalesByProductChart', title: 'Monthly Sales by Product', category: 'Charts' },
+  { path: '/docs', name: 'DocsTable', title: 'Docs', category: 'Docs' },
 ]
 
 export function AppRoutes() {
@@ -33,6 +37,9 @@ export function AppRoutes() {
         <Route path="/charts/sales-category" element={<SalesByCategoryChart />} />
         <Route path="/charts/top-products" element={<TopProductsChart />} />
         <Route path="/charts/monthly-sales-by-product" element={<MonthlySalesByProductChart />} />
+        <Route path="/charts/monthly-sales-by-customer/:customerId" element={<MonthlySalesByCustomerChart />} />
+        <Route path="/docs" element={<DocsTable />} />
+        <Route path="/docs/:slug" element={<DocPage />} />
       </Routes>
     </Suspense>
   )
