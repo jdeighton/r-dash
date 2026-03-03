@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { AgCharts, ModuleRegistry, AllCommunityModule } from 'ag-charts-community'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { AgCharts } from 'ag-charts-react'
 import { useDuckDB } from '../hooks/useDuckDB'
 import { copyChartToClipboard, downloadChart, isClipboardSupported } from '../utils/chartExport'
 import styles from './ChartView.module.css'
-
-ModuleRegistry.registerModules([AllCommunityModule])
 
 const REVENUE_QUERY = `
   SELECT
@@ -71,7 +69,6 @@ function buildCrossLines(events) {
 
 export default function RevenueChart() {
   const { queryToArray } = useDuckDB()
-  const containerRef = useRef(null)
   const chartRef = useRef(null)
 
   const [chartConfig, setChartConfig] = useState(null)
@@ -147,14 +144,13 @@ export default function RevenueChart() {
     loadData()
   }, [loadData])
 
-  useEffect(() => {
-    if (!chartConfig || !containerRef.current) return
+  const options = useMemo(() => {
+    if (!chartConfig) return null
 
     const { revenueData, crossLines } = chartConfig
     const activeCrossLines = showEvents ? crossLines : []
 
-    const options = {
-      container: containerRef.current,
+    return {
       title: { text: 'Daily Revenue Trend' },
       data: revenueData,
       series: [
@@ -174,28 +170,17 @@ export default function RevenueChart() {
           },
         },
       ],
-      axes: {
-        x: {
+      axes: [
+        {
           type: 'time',
+          position: 'bottom',
           crossLines: activeCrossLines,
         },
-        y: {
+        {
           type: 'number',
+          position: 'left',
         },
-      },
-    }
-
-    if (chartRef.current) {
-      AgCharts.update(chartRef.current, options)
-    } else {
-      chartRef.current = AgCharts.create(options)
-    }
-
-    return () => {
-      if (chartRef.current) {
-        chartRef.current.destroy()
-        chartRef.current = null
-      }
+      ],
     }
   }, [chartConfig, showEvents])
 
@@ -250,7 +235,9 @@ export default function RevenueChart() {
           <p>No data available for chart</p>
         </div>
       ) : (
-        <div className={styles.chartContainer} ref={containerRef} />
+        <div className={styles.chartContainer}>
+          <AgCharts options={options} ref={chartRef} />
+        </div>
       )}
     </div>
   )

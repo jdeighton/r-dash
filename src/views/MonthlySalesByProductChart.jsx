@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { AgCharts, ModuleRegistry, AllCommunityModule } from 'ag-charts-community'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { AgCharts } from 'ag-charts-react'
 import { useDuckDB } from '../hooks/useDuckDB'
 import { copyChartToClipboard, downloadChart, isClipboardSupported } from '../utils/chartExport'
 import styles from './ChartView.module.css'
-
-ModuleRegistry.registerModules([AllCommunityModule])
 
 const QUERY = `
   SELECT
@@ -18,7 +16,6 @@ const QUERY = `
 
 export default function MonthlySalesByProductChart() {
   const { queryToArray } = useDuckDB()
-  const containerRef = useRef(null)
   const chartRef = useRef(null)
 
   const [chartConfig, setChartConfig] = useState(null) // { data, series } once loaded
@@ -59,8 +56,6 @@ export default function MonthlySalesByProductChart() {
     }
   }, [showToast])
 
-  // Effect 1: load and pivot the data, then store config in state.
-  // The state change causes a re-render that mounts the container div.
   const loadData = useCallback(async () => {
     try {
       setLoading(true)
@@ -117,45 +112,31 @@ export default function MonthlySalesByProductChart() {
     loadData()
   }, [loadData])
 
-  // Effect 2: create or update the chart once chartConfig is in state and the
-  // container div has been committed to the DOM by the preceding re-render.
-  useEffect(() => {
-    if (!chartConfig || !containerRef.current) return
+  const options = useMemo(() => {
+    if (!chartConfig) return null
 
     const { data, series } = chartConfig
 
-    const options = {
-      container: containerRef.current,
+    return {
       title: { text: 'Monthly Sales by Product' },
       data,
       series,
-      axes: {
-        x: {
+      axes: [
+        {
           type: 'category',
+          position: 'bottom',
           label: { rotation: -45 },
         },
-        y: {
+        {
           type: 'number',
+          position: 'left',
           label: {
             formatter: ({ value }) =>
               '$' + Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 }),
           },
         },
-      },
+      ],
       legend: { enabled: true, position: 'bottom' },
-    }
-
-    if (chartRef.current) {
-      AgCharts.update(chartRef.current, options)
-    } else {
-      chartRef.current = AgCharts.create(options)
-    }
-
-    return () => {
-      if (chartRef.current) {
-        chartRef.current.destroy()
-        chartRef.current = null
-      }
     }
   }, [chartConfig])
 
@@ -201,7 +182,9 @@ export default function MonthlySalesByProductChart() {
           <p>No data available for chart</p>
         </div>
       ) : (
-        <div className={styles.chartContainer} ref={containerRef} />
+        <div className={styles.chartContainer}>
+          <AgCharts options={options} ref={chartRef} />
+        </div>
       )}
     </div>
   )

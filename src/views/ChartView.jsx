@@ -1,16 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { AgCharts, ModuleRegistry, AllCommunityModule } from 'ag-charts-community'
+import { AgCharts } from 'ag-charts-react'
 import { useDuckDB } from '../hooks/useDuckDB'
 import { copyChartToClipboard, downloadChart, isClipboardSupported } from '../utils/chartExport'
 import styles from './ChartView.module.css'
 
-// Register AG Charts Community modules once
-ModuleRegistry.registerModules([AllCommunityModule])
-
 export default function ChartView({ title, query, chartOptions }) {
   const { queryToArray } = useDuckDB()
-  const containerRef = useRef(null)
-  const chartInstanceRef = useRef(null)
+  const chartRef = useRef(null)
 
   const [chartData, setChartData] = useState([])
   const [loading, setLoading] = useState(false)
@@ -56,32 +52,13 @@ export default function ChartView({ title, query, chartOptions }) {
     loadData()
   }, [loadData])
 
-  // Create/update/destroy chart imperatively
-  useEffect(() => {
-    if (!chartData.length || !containerRef.current) return
-
-    const options = {
-      container: containerRef.current,
-      ...chartOptions,
-      data: chartData,
-    }
-
-    if (chartInstanceRef.current) {
-      AgCharts.update(chartInstanceRef.current, options)
-    } else {
-      chartInstanceRef.current = AgCharts.create(options)
-    }
-
-    return () => {
-      if (chartInstanceRef.current) {
-        chartInstanceRef.current.destroy()
-        chartInstanceRef.current = null
-      }
-    }
-  }, [chartData, chartOptions])
+  const options = useMemo(() => ({
+    ...chartOptions,
+    data: chartData,
+  }), [chartData, chartOptions])
 
   const handleCopyToClipboard = useCallback(async () => {
-    if (!chartInstanceRef.current) {
+    if (!chartRef.current) {
       showToast('Chart not ready', 'error')
       return
     }
@@ -95,7 +72,7 @@ export default function ChartView({ title, query, chartOptions }) {
         return
       }
 
-      await copyChartToClipboard(chartInstanceRef.current)
+      await copyChartToClipboard(chartRef.current)
       showToast('Chart copied to clipboard!', 'success')
     } catch (err) {
       console.error('Failed to copy chart:', err)
@@ -106,14 +83,14 @@ export default function ChartView({ title, query, chartOptions }) {
   }, [showToast])
 
   const handleDownload = useCallback(async () => {
-    if (!chartInstanceRef.current) {
+    if (!chartRef.current) {
       showToast('Chart not ready', 'error')
       return
     }
 
     try {
       const filename = `${title.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}.png`
-      await downloadChart(chartInstanceRef.current, filename)
+      await downloadChart(chartRef.current, filename)
       showToast('Chart downloaded!', 'success')
     } catch (err) {
       console.error('Failed to download chart:', err)
@@ -166,7 +143,9 @@ export default function ChartView({ title, query, chartOptions }) {
           <p>No data available for chart</p>
         </div>
       ) : (
-        <div className={styles.chartContainer} ref={containerRef} />
+        <div className={styles.chartContainer}>
+          <AgCharts options={options} ref={chartRef} />
+        </div>
       )}
     </div>
   )

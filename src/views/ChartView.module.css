@@ -95,6 +95,12 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+/* Make the AgCharts wrapper div fill the container so autoSize works correctly */
+.chartContainer > div {
+  height: 100%;
+  width: 100%;
+}
+
 .loadingContainer,
 .errorContainer,
 .emptyContainer {

@@ -36,3 +36,6 @@ coverage/
 
 # TypeScript
 *.tsbuildinfo
+
+# Local build stuff
+bun.lock
